@@ -68,7 +68,7 @@ bb::Result bb::Subsystem::handleConsoleCommand(const std::vector<String>& words,
 		if(words.size() != 2) return RES_CMD_INVALID_ARGUMENT_COUNT;
 		for(auto& p: parameters_) {
 			if(p->name() == words[1]) {
-				p->print(stream);
+				p->print("", stream);
 				return RES_OK;
 			}
 		}
@@ -78,6 +78,15 @@ bb::Result bb::Subsystem::handleConsoleCommand(const std::vector<String>& words,
 	else if(words[0] == "set") {
 		if(words.size() != 3) return RES_CMD_INVALID_ARGUMENT_COUNT;
 		return setParameterValue(words[1], words[2]);
+	}
+
+	for(auto& cmd: commands_) {
+		if(cmd.cmd == words[0]) {
+			std::vector<String> words2 = words;
+			words2.erase(words2.begin());
+			if(words2.size() < cmd.minNumArgs || words2.size() > cmd.maxNumArgs) return RES_CMD_INVALID_ARGUMENT_COUNT;
+			return cmd.fn(words2, stream);
+		}
 	}
 
 	bb::printf("Unknown command \"%s\"\n", words[0].c_str());
@@ -143,19 +152,42 @@ void bb::Subsystem::printExtendedStatus(ConsoleStream* stream) {
 
 void bb::Subsystem::printHelp(ConsoleStream* stream) {
 	stream->printf(help());
+	if(commands_.size()) {
+		stream->printf("Commands:\n");
+
+		size_t arglen = 0;
+		size_t cmdlen = 0;
+		for(auto& c: commands_) {
+			cmdlen = max(cmdlen, c.cmd.length());
+			arglen = max(arglen, c.arghelp.length());
+		}
+
+		printf("\t%-*s %-*s   %s\n", cmdlen, "CMD", arglen, "ARGS", "HELP");
+		printf("\t%-*s %-*s   %s\n", cmdlen, "---", arglen, "----", "----");
+		for(auto& c: commands_) {
+			printf("\t%-*s %-*s - %s\n", cmdlen, c.cmd.c_str(), arglen, c.arghelp.c_str(), c.help.c_str());
+		}
+	}
 	if(parameters_.size()) {
 		stream->printf("Parameters:\n");
-		printParameters(stream);
+		for(auto &p: parameters_) {
+			p->print("\t", stream);
+		}	
 	} else {
 		stream->printf("No parameters.\n");
 	}
 }
 
-void bb::Subsystem::printParameters(ConsoleStream* stream) {
-	for(auto &p: parameters_) {
-		p->print(stream);
-	}	
+bb::Result bb::Subsystem::addCommand(const String& cmd, const String& arghelp, const String& help, 
+									 std::function<Result(const std::vector<String>&,ConsoleStream*)> fn, 
+								 	 size_t minNumArgs, size_t maxNumArgs) {
+	for(auto& command: commands_) {
+		if(command.cmd == cmd) return RES_COMMON_DUPLICATE_IN_LIST;
+	}
+	commands_.push_back({cmd, arghelp, help, fn, minNumArgs, maxNumArgs});
+	return RES_OK;
 }
+
 
 bb::Subsystem::Parameter* bb::Subsystem::findParameter(const String& name) {
 	for(auto p: parameters_) {
@@ -205,7 +237,7 @@ bb::Result bb::Subsystem::setParameterValue(const String& name, const String& st
 	return retval;
 }
 
-void bb::Subsystem::Parameter::print(ConsoleStream* stream) {
-	if(stream) stream->printf("%s: %s\n", name_.c_str(), description().c_str());
+void bb::Subsystem::Parameter::print(const String& prefix, ConsoleStream* stream) {
+	if(stream) stream->printf("%s%s: %s\n", prefix.c_str(), name_.c_str(), description().c_str());
+	else bb::printf("%s%s: %s\n", prefix.c_str(), name_.c_str(), description().c_str());
 }
-

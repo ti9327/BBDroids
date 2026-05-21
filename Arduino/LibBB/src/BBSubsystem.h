@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <map>
 #include <vector>
+#include <functional>
 #include "BBError.h"
 #include "BBConfigStorage.h"
 
@@ -61,7 +62,6 @@ public:
 	virtual void printStatusLine(ConsoleStream *stream = NULL);
 	virtual void printExtendedStatus(ConsoleStream *stream = NULL);
 	virtual void printHelp(ConsoleStream *stream);
-	virtual void printParameters(ConsoleStream *stream);
 
 	virtual Result addParameter(const String& name, const String& help, unsigned int& param, int max = INT_MAX);
 	virtual Result addParameter(const String& name, const String& help, int& param, int min = INT_MIN, int max = INT_MAX);
@@ -69,17 +69,29 @@ public:
 	virtual Result addParameter(const String& name, const String& help, String& param, int maxlen = 0);
 	virtual Result addParameter(const String& name, const String& help, bool& val);
 
+	virtual Result addCommand(const String& cmd, const String& arghelp, const String& help, 
+		                      std::function<Result(const std::vector<String>&,ConsoleStream*)> fn, 
+							  size_t minNumArgs=0, size_t maxNumArgs=10);
+
 	virtual Result setParameterValue(const String& name, const String& stringVal);
 	virtual void parameterChangedCallback(const String& name) {} // override if you want to do something if the parameter was changed
 
 protected:
+	struct Command {
+		String cmd;
+		String arghelp, help;
+		std::function<Result(const std::vector<String>&,ConsoleStream*)> fn;
+		size_t minNumArgs, maxNumArgs;
+	};
+	std::vector<Command> commands_;
+
 	class Parameter {
 	public:
 		virtual Result fromString(const String& str) = 0;
 		virtual String toString() const = 0;
 		virtual String description() const = 0;
 		virtual const String& name() const { return name_; }
-		virtual void print(ConsoleStream* stream);
+		virtual void print(const String& prefix="", ConsoleStream* stream=nullptr);
 	protected:
 		String name_;
 	};
