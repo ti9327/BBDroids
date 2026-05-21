@@ -205,9 +205,9 @@ void bb::Console::handleStreamInput(ConsoleStream* stream) {
 
 	Result res = firstResponder_->handleConsoleCommand(words, stream);
 	if(res != RES_OK) {
-		stream->printf(errorMessage(res));
+		stream->printf(errorMessage(res)); // doesn't end with a newline so have to add one
 		stream->printf(".\n> ");
-	} else stream->printf("\n> ");
+	} else stream->printf("> "); // We expect that all direct results will end with a newline.
 }
 
 bb::Result bb::Console::handleConsoleCommand(const std::vector<String>& words, ConsoleStream* stream) {
