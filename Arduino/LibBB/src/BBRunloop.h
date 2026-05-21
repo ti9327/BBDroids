@@ -41,8 +41,16 @@ public:
 	virtual void* scheduleTimedCallback(uint64_t milliseconds, std::function<void(void)> cb, bool oneshot = true);
 	virtual Result cancelTimedCallback(void* handle);
 
+	enum StreamCallbackType {
+		STREAM_READ = 0x1,
+		STREAM_WRITE = 0x2
+	};
+
+	virtual void* addStreamCallback(Stream* s, StreamCallbackType t, std::function<void(Stream*)> cb);
+	virtual Result cancelStreamCallback(void* handle);
 
 protected:
+	void runStreams();
 
 	struct TimedCallback {
 		uint64_t triggerMS, deltaMS;
@@ -52,6 +60,13 @@ protected:
 
 	std::vector<TimedCallback> timedCallbacks_;
 
+	struct StreamCallback {
+		Stream* stream;
+		StreamCallbackType type;
+		std::function<void(Stream*)> cb;
+	};
+
+	std::vector<StreamCallback> streamCallbacks_;
 
 	Runloop();
 	bool running_;

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <limits.h>
+#include <LibBB.h>
 #include "BBRunloop.h"
 #include "BBConsole.h"
 
@@ -60,6 +61,9 @@ bb::Result bb::Runloop::start(ConsoleStream* stream) {
 			if(runningStatus_) Console::console.printfBroadcast(str.c_str());
 		}
 
+		// ...and run streams once...
+		runStreams();
+
 		// ...find out how long we took...
 		unsigned long micros_end_loop = micros();
 		unsigned long looptime;
@@ -70,10 +74,16 @@ bb::Result bb::Runloop::start(ConsoleStream* stream) {
 		}
 		if(runningStatus_) Console::console.printfBroadcast("Total: %dus", looptime);
 
-		// ...and bicker if we overran the allotted time.
+		// ...not overran? Then fill everything with stream callbacks and busy loop.
 		if(looptime <= cycleTime_) {
-			delayMicroseconds(cycleTime_-looptime);
+			while(looptime <= cycleTime_) {
+				unsigned long usStream = micros();
+				delayMicroseconds(1);
+				runStreams();
+				looptime += WRAPPEDDIFF(micros(), usStream, ULONG_MAX);
+			}
 		} else if(excuseOverrun_ == false && suppressOverrun_ == false) {
+			// overran? Bicker.
 			String msg;
 			char buf[255];
 			snprintf(buf, 255, "%ld/%ldus spent in loop: ", looptime, cycleTime_);
@@ -90,6 +100,15 @@ bb::Result bb::Runloop::start(ConsoleStream* stream) {
 	started_ = false;
 	operationStatus_ = RES_SUBSYS_NOT_STARTED;
 	return RES_OK;
+}
+
+void bb::Runloop::runStreams() {
+	size_t ran = 0;
+	for(auto& c: streamCallbacks_) {
+		if(c.type & STREAM_READ && c.stream->available()) { c.cb(c.stream); ran++; }
+		if(c.type & STREAM_WRITE && c.stream->availableForWrite()) { c.cb(c.stream); ran++; }
+	}
+	//if(ran>0) bb::printf("Ran %d streams\n", ran);
 }
 
 bb::Result bb::Runloop::stop(ConsoleStream *stream) {
@@ -150,4 +169,19 @@ bb::Result bb::Runloop::cancelTimedCallback(void* handle) {
 	return RES_COMMON_NOT_IN_LIST;
 }
 
+void* bb::Runloop::addStreamCallback(Stream* s, StreamCallbackType type, std::function<void(Stream*)> cb) {
+	StreamCallback c = {s, type, cb};
+	streamCallbacks_.push_back(c);
+	return &streamCallbacks_.back();
+}
 
+bb::Result bb::Runloop::cancelStreamCallback(void* handle) {
+	for(std::vector<StreamCallback>::iterator iter = streamCallbacks_.begin(); iter != streamCallbacks_.end(); iter++) {
+		if(handle == (void*)&(*iter)) {
+			iter = streamCallbacks_.erase(iter);
+			return RES_OK;
+		}
+	}
+	Console::console.printfBroadcast("Callback not found!\n");
+	return RES_COMMON_NOT_IN_LIST;
+}
