@@ -58,10 +58,12 @@ bool DOSound::playSound(unsigned int fileNumber) {
     return false;
   }
 
+#if 0
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.stop();
     delayMicroseconds(DOSOUND_DELAY_US);
   }
+#endif
 
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.play(fileNumber);
@@ -76,10 +78,12 @@ bool DOSound::playFolder(unsigned int folder, unsigned int filenumber, bool over
     if(override == false) return false;
   }
 
+#if 0
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.stop();
     delayMicroseconds(DOSOUND_DELAY_US);
   }
+#endif
 
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.playFolder(int(folder), filenumber);
