@@ -32,6 +32,7 @@ bool DOSound::begin() {
   bb::printf("Setting up sound... ");
   ser_->begin(9600);
   if(dfp_.begin(*ser_, debug_)) {
+    dfp_.setTimeout(1000);
     for(int i=0; i<DOSOUND_REPEATS; i++) {
       dfp_.volume(volume_);
       delayMicroseconds(DOSOUND_DELAY_US);
@@ -53,11 +54,12 @@ bool DOSound::playSound(unsigned int fileNumber) {
     bb::printf("Sound system not available!\n");
     return false;
   }
-
+#if 0
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.stop();
     delayMicroseconds(DOSOUND_DELAY_US);
   }
+#endif
 
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.play(fileNumber);
@@ -72,10 +74,12 @@ bool DOSound::playFolder(unsigned int folder, unsigned int filenumber, bool over
     if(override == false) return false;
   }
 
+#if 0
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.stop();
     delayMicroseconds(DOSOUND_DELAY_US);
   }
+#endif
 
   for(int i=0; i<DOSOUND_REPEATS; i++) {
     dfp_.playFolder(int(folder), filenumber);

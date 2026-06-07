@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <wiring_private.h>
 
-//#define DFPLAYERMINI_FAST
+#define DFPLAYERMINI_FAST
 #if defined(DFPLAYERMINI_FAST)
 #include <DFPlayerMini_Fast.h>
 #else
@@ -18,7 +18,7 @@ class DOSound {
 public:
   static DOSound sound;
 
-  DOSound(uint8_t volume=10, bool debug=false);
+  DOSound(uint8_t volume=10, bool debug=true);
   void setSerial(Uart *ser);
   bool begin();
   bool available() { return available_; }

@@ -391,7 +391,7 @@ Result DODroid::step() {
 bb::Result DODroid::stepPowerProtect() {
   DOBattStatus::batt.updateVoltage();
   DOBattStatus::batt.updateCurrent();
-  bb::printf("Current: %f\n", DOBattStatus::batt.current());
+  //bb::printf("Current: %f\n", DOBattStatus::batt.current());
 
 
   // CRITICAL: Switch everything off (except the neck servo, so that we don't drop the head) and go into endless loop if power 
