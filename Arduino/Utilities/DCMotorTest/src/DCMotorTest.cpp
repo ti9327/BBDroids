@@ -6,8 +6,8 @@ using namespace bb;
 static const uint8_t PIN_DISABLE = 255;
 
 //#include "ConfigBB8.h"
-//#include "ConfigDO.h"
-#include "ConfigSerf.h"
+#include "ConfigDO.h"
+//#include "ConfigSerf.h"
 
 // --------------------------------------------------
 
@@ -202,7 +202,14 @@ public:
 
     if(words[0] == "help") {
       stream->printf(help_);
-      printParameters(stream);
+      if(parameters_.size()) {
+        stream->printf("Parameters:\n");
+        for(auto &p: parameters_) {
+          p->print("\t", stream);
+        }	
+      } else {
+        stream->printf("No parameters.\n");
+      }
       return RES_OK;
     }
 
